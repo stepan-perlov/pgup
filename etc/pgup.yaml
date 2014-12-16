@@ -1,0 +1,7 @@
+databases:
+  - ^example
+  - ^example2
+tables:
+  - tables
+procedures:
+  - procedures

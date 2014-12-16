@@ -1,0 +1,5 @@
+pake.log
+build/*
+dist/*
+pgup.egg-info/*
+*.pyc
