@@ -1,0 +1,9 @@
+{% for action in columns_actions %}
+ALTER TABLE {{name}}
+    {{action}};
+{% endfor %}
+
+{% for comment in columns_comments %}
+COMMENT ON
+    {{name}}.{{comment}};
+{% endfor %}

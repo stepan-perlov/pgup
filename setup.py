@@ -13,6 +13,7 @@ setup(
     author_email="stepanperlov@gmail.com",
     install_requires=["PyYAML", "jinja2", "python-make"],
     packages=["pgup"],
+    package_data={'pgup': ['templates/*.j2']},
     scripts=["bin/pgup"],
     data_files=[('/etc', ['etc/pgup.yaml'])],
     platforms=["linux"]
