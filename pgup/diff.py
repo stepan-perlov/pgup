@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-import os
-from pake.shell import git, find
+from pake.shell import git
+from patch import Structure
+from patch import Patch
 from table import Table
 
 
@@ -9,29 +10,38 @@ def diff(commit, config):
     regexp = "\\\\|".join( ["^[ADMR]\\\\s\\\\+{}".format(db) for db in config.databases] )
     diff = pipe.grep(regexp).strip().split("\n")
 
-    deleted, patch, modify = [], [], []
+    structure = {}
+    patch = {}
+    for db in config.databases:
+        structure[db] = Structure(db, config)
+        patch[db] = Patch(db, config)
+
+
     for line in diff:
         action, fpath = line.split("\t")
+        split = fpath.split("/")
+        db, schema, path = split[0], split[1], split[2]
 
+        structure[db].add_schema(schema)
+        patch[db].add_file(path, fpath, action)
+        """
         split = fpath.split("/")
         db, schema = split[0], split[1]
-        [modify.append("{}/{}/{}".format(db, schema, table)) for table in config.tables if os.path.exists("{}/{}/{}".format(db, schema, table))]
+        [current_tables.append("{}/{}/{}".format(db, schema, table)) for table in config.tables if os.path.exists("{}/{}/{}".format(db, schema, table))]
+        [current_procedures.append("{}/{}/{}".format(db, schema, procedure)) for procedure in config.procedures if os.path.exists("{}/{}/{}".format(db, schema, table))]
 
         if action == "D":
             deleted.append(fpath)
         else:
             patch.append(fpath)
 
+        """
+    # load structure of commit to update
     HEAD = git("rev-parse HEAD").strip()
     git("checkout {}".format(commit))
-
-    current_tables = {}
-    for path in set(modify):
-        for fpath in find("{} -name *.yaml".format(path)).split():
-            t = Table(fpath)
-            current_tables[str(t)] = t
-
+    [structure[db].load_files() for db in structure]
     git("checkout {}".format(HEAD))
+
     queries = []
     for fpath in patch:
         split = fpath.split("/")
