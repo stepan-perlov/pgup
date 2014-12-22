@@ -16,6 +16,10 @@ from errors import TableException, ColumnException
 
 class Table(object):
 
+    _alter = 0
+    _create = 0
+    _drop = 0
+
     def __init__(self, fpath):
         self._fpath = fpath
         self._like = []
@@ -30,6 +34,12 @@ class Table(object):
 
     def __repr__(self):
         return "<Table object {}>".format(self._name)
+
+    @classmethod
+    def overview(cls):
+        return u"TABLE: CREATE {} / DROP {} / ALTER {}".format(
+            cls._create, cls._drop, cls._alter
+        )
 
     def alter(self, table):
         exists, columns_actions, columns_comments = [], [], []
@@ -51,6 +61,8 @@ class Table(object):
             columns_actions += actions
             columns_comments.append(comment)
 
+        Table._alter += 1
+
         return j2.get_template("alter_table.j2").render({
             "name": str(self),
             "columns_actions": columns_actions,
@@ -65,11 +77,17 @@ class Table(object):
             columns_actions += actions
             columns_comments.append(comment)
 
+        Table._create += 1
+
         return query + j2.get_template("alter_table.j2").render({
             "name": str(self),
             "columns_actions": columns_actions,
             "columns_comments": columns_comments
         })
+
+    def drop(self):
+        Table._drop += 1
+        return u"DROP TABLE {}".format(self)
 
     def _add_column(self, column):
         if column.name in self._columns:
@@ -148,7 +166,7 @@ class Column(object):
 
     @classmethod
     def overview(cls):
-        return u"ADD : {} / DROP : {} / SET DATA TYPE: {} / SET DEFAULT {} / DROP DEFAULT {} / SET NOT NULL {} / DROP NOT NULL {}".format(
+        return u"COLUMN: ADD {} / DROP {} / SET DATA TYPE {} / SET DEFAULT {} / DROP DEFAULT {} / SET NOT NULL {} / DROP NOT NULL {}".format(
             cls._add, cls._drop, cls._set_data_type, cls._set_default, cls._drop_default, cls._set_not_null, cls._drop_not_null
         )
 
@@ -227,7 +245,3 @@ class Column(object):
             eq = False
 
         return eq
-
-
-if __name__ == "__main__":
-    t = Table("/home/stepan/Desktop/mezzo/gui_db/um/tables/users.yaml")
