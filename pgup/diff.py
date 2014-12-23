@@ -4,7 +4,7 @@ from patch import Structure
 from patch import Patch
 
 
-def diff(commit, config):
+def diff(commit, config="/etc/pgup.yaml"):
     pipe = git("diff --name-status {} HEAD".format(commit), pipe=True)
     regexp = "\\\\|".join( ["^[ADMR]\\\\s\\\\+{}".format(db) for db in config.databases] )
     diff = pipe.grep(regexp).strip().split("\n")
@@ -32,5 +32,9 @@ def diff(commit, config):
     queries = {}
     for db in config.databases:
         queries[db] = patch[db].make(structure[db])
-        print queries[db]
-    print Patch.overview()
+
+    response = {
+        "overview": Patch.overview(),
+        "queries": queries
+    }
+    return response

@@ -5,5 +5,5 @@ ALTER TABLE {{name}}
 
 {% for comment in columns_comments %}
 COMMENT ON
-    {{name}}.{{comment}};
+    COLUMN {{name}}.{{comment}};
 {% endfor %}

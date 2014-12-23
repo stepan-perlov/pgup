@@ -43,8 +43,8 @@ class Patch(object):
 
     @staticmethod
     def overview():
-        for cls in [Table, Column, Procedure]:
-            print cls.overview()
+        overview_list = [cls.overview() for cls in [Table, Column, Procedure]]
+        return "\n".join(overview_list)
 
     def add_file(self, folder, fpath, action):
         IS_TABLE = folder in self._config.tables

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
+import io
 from pyparsing import CaselessKeyword, Word, Literal, Suppress, cStyleComment
-from pyparsing import ZeroOrMore, OneOrMore, Optional, restOfLine, CharsNotIn
-from pyparsing import alphas, nums, alphanums, Regex, SkipTo
+from pyparsing import ZeroOrMore, OneOrMore, Optional, restOfLine
+from pyparsing import alphas, nums, alphanums, SkipTo
 
 
 def parse_header(header):
@@ -11,16 +12,18 @@ def parse_header(header):
     FUNCTION = CaselessKeyword("FUNCTION")
     IN = CaselessKeyword("IN")
     OUT = CaselessKeyword("OUT")
+    INOUT = CaselessKeyword("INOUT")
+    VARIADIC = CaselessKeyword("VARIADIC")
     NAME = (Word(alphas + "_."))("name")
     ALIAS = Word(alphas, alphas + "_")
     TYPE = (
         Word(alphas, alphanums + "[] ", ) + Suppress(Optional(Literal("(") + Word(nums) + Literal(")")))
     )
     PRM = (
-        Optional( Suppress(IN) + Suppress(ALIAS) ) +
-        Optional( OUT + Suppress(ALIAS) ) +
+        Optional(IN | OUT | INOUT | VARIADIC | (OUT + VARIADIC)) +
+        Optional(ALIAS) +
         TYPE
-    ).setParseAction(lambda res: "" if res[0].startswith("OUT") else res[0].strip())
+    ).setParseAction(lambda res: " ".join([w.strip() for w in res]))
     COMMENT = "--" + restOfLine
     COMMA = Suppress(",")
     PARAMS = ZeroOrMore(
@@ -31,7 +34,7 @@ def parse_header(header):
     HEADER = (
         CREATE + Optional(OR) + Optional(REPLACE) + FUNCTION + NAME +
         Suppress("(") + PARAMS  + Suppress(")")
-    ).setParseAction(lambda res: {"name": res.name, "input": [t for t in res.input if t]})
+    ).setParseAction(lambda res: {"name": res.name, "input": res.input})
 
     parse_header = OneOrMore(HEADER | Suppress(SkipTo(HEADER)))
     parse_header.ignore(COMMENT)
@@ -46,10 +49,18 @@ class Procedure(object):
 
     def __init__(self, fpath):
         self._fpath = fpath
-        with open(fpath) as fstream:
+        self._overloaded = []
+        with io.open(fpath, encoding="utf-8") as fstream:
             self._procedure = fstream.read()
 
-        self._parse(self._procedure)
+        try:
+            self._header = parse_header(self._procedure)
+        except Exception as error:
+            print self._fpath
+            raise error
+
+    def __str__(self):
+        return self._header[0]["name"]
 
     @classmethod
     def overview(cls):
@@ -57,20 +68,20 @@ class Procedure(object):
             cls._create, cls._drop
         )
 
-    def _parse(self, procedure):
-        try:
-            self._header = parse_header(procedure)
-        except Exception as error:
-            print self._fpath
-            raise error
+    def add_overloaded(self, procedure):
+        self._overloaded.append(procedure)
 
     def drop(self):
+        queries = []
         for h in self._header:
             Procedure._drop += 1
-            return "DROP FUNCTION {name}({input});".format(
-                name=h["name"],
-                input=", ".join(h["input"])
+            queries.append(
+                u"DROP FUNCTION {name}({input});".format(
+                    name=h["name"],
+                    input=u", ".join(h["input"])
+                )
             )
+        return "\n".join(queries)
 
     def create(self):
         Procedure._create += 1
