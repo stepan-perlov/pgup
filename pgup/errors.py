@@ -10,5 +10,8 @@ class TableException(PgupException):
 class ColumnException(PgupException):
     pass
 
+class ProcedureException(PgupException):
+    pass
+
 class ConfigException(PgupException):
     pass

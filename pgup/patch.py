@@ -3,6 +3,7 @@ import os
 from pake.shell import find
 from table import Table
 from table import Column
+from procedure import SqlFile
 from procedure import Procedure
 
 
@@ -28,8 +29,13 @@ class Structure(object):
             for ppath in ["{}/{}/{}".format(self._db, schema, path) for path in self._config.procedures]:
                 if os.path.exists(ppath):
                     for fpath in find("{} -name *.sql".format(ppath)).split():
-                        procedure = Procedure(fpath)
-                        self._procedures[str(procedure)] = procedure
+                        sql_file = SqlFile(fpath)
+                        for header in sql_file.find_procedures_headers():
+                            procedure = Procedure(sql_file, header)
+                            if str(procedure) in self._procedures:
+                                self._procedures[str(procedure)].add_overloaded(procedure)
+                            else:
+                                self._procedures[str(procedure)] = procedure
 
 
 class Patch(object):
@@ -57,25 +63,32 @@ class Patch(object):
             else:
                 self._modify_tables[str(table)] = table
         elif IS_PROCEDURE:
-            procedure = Procedure(fpath)
-            if IS_DELETED:
-                self._deleted_procedures[str(procedure)] = procedure
-            else:
-                self._modify_procedures[str(procedure)] = procedure
-
+            sql_file = SqlFile(fpath)
+            for header in sql_file.find_procedures_headers():
+                print header
+                procedure = Procedure(sql_file, header)
+                if IS_DELETED:
+                    if str(procedure) in self._deleted_procedures:
+                        self._deleted_procedures[str(procedure)].add_overloaded(procedure)
+                    else:
+                        self._deleted_procedures[str(procedure)] = procedure
+                else:
+                    if str(procedure) in self._modify_procedures:
+                        self._modify_procedures[str(procedure)].add_overloaded(procedure)
+                    else:
+                        self._modify_procedures[str(procedure)] = procedure
 
     def make(self, structure):
         queries = []
         queries += [table.drop() for table in self._deleted_tables]
         queries += [procedure.drop() for procedure in self._deleted_procedures]
 
-
         for name, table in self._modify_tables.iteritems():
             if name in structure._tables:
                 old = structure._tables[name]
-                queries.append( old.alter(table) )
+                queries.append(old.alter(table))
             else:
-                queries.append( table.create() )
+                queries.append(table.create())
 
         for name, procedure in self._modify_procedures.iteritems():
             if name in structure._procedures:
