@@ -1,0 +1,30 @@
+CREATE TABLE IF NOT EXISTS {{name}} (
+{% for table in like %}
+    LIKE {{table}}{% if not ( loop.last and columns == []) %},{% endif %}
+
+{% endfor %}
+{% for clm in columns %}
+    {{clm.definition}}{% if not loop.last %},{% endif %}
+
+{% endfor %}
+)
+{% if inherits %}
+INHERITS
+{% for table in inherits %}
+    {{table}}{% if not loop.last %},{% endif %}
+
+{% endfor %}
+{% endif %};
+
+{% if comment %}
+COMMENT ON TABLE {{name}}
+    IS '{{comment}}';
+{% endif %}
+
+{% for clm in comments_on_columns %}
+{% if clm.comment %}
+
+COMMENT ON COLUMN {{name}}.{{clm.name}}
+    IS '{{clm.comment}}';
+{% endif %}
+{% endfor %}

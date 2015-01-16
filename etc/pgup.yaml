@@ -1,7 +1,9 @@
 databases:
-  - ^example
-  - ^example2
+  - ^gui_db
+  - ^cached_db
 tables:
   - tables
 procedures:
-  - procedures
+  - api
+  - internal
+  - pu

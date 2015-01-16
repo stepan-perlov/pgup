@@ -4,15 +4,19 @@ import io
 import os
 import argparse
 from pake.shell import mkdir, rm
-from pgup import diff
 from pgup import Config as PgupConfig
+from pgup import init
+from pgup import diff
+from pgup import Counter
 from pgup.errors import PgupException
 
 if not os.path.exists(".git"):
-    raise PgupException(".git folder not exists. Must run from project root.".strip)
+    raise PgupException(".git folder not exists. Must run from project root.")
 
 parser = argparse.ArgumentParser(description="util for build postgresql structure")
 parser.add_argument("-m", "--commit", default=None, help="Commit which need update, if None - run init")
+parser.add_argument("--gui_db_structure", default=None, help="Path to gui_db structure.yaml")
+parser.add_argument("--cached_db_structure", default=None, help="Path to cached_db structure.yaml")
 parser.add_argument("-c", "--config", default="/etc/pgup.yaml", help="Path to pgup configuration")
 parser.add_argument("-b", "--build", default="build", help="Path for pgup build")
 parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Puts debug messages if exists")
@@ -43,8 +47,35 @@ if args.commit:
                 DBFILES = u"{}/sql".format(DBDIR)
                 mkdir(DBFILES)
                 files = []
-                for i, qry in enumerate(queries):
-                    fpath = u"{}/{}.sql".format(DBFILES, i)
+                counter = Counter()
+                for qry, name in zip(queries, res["names"][db]):
+                    counter.next()
+                    fpath = u"{}/{}:{}-{}.sql".format(DBFILES, counter.get_textnum(), counter.get_intnum(), name)
+                    with io.open(fpath, "w", encoding="utf-8") as fstream:
+                        fstream.write(qry)
+                    files.append(u"\\i '{}';".format(fpath))
+                with io.open(u"{}/execute.sql".format(DBDIR), "w", encoding="utf-8") as fstream:
+                    fstream.write(u"\n".join(files))
+            else:
+                with io.open(u"{}/execute.sql".format(DBDIR), "w", encoding="utf-8") as fstream:
+                    fstream.write(u"\n".join(queries))
+
+elif args.gui_db_structure:
+    res = init(args.gui_db_structure, args.cached_db_structure, pgup_config)
+    with open(u"{}/overview.txt".format(BUILD), "w") as fstream:
+        fstream.write(res["overview"])
+    for db, queries in res["queries"].iteritems():
+        if queries:
+            DBDIR = u"{}/{}".format(BUILD, db)
+            mkdir(DBDIR)
+            if args.manyfiles:
+                DBFILES = u"{}/sql".format(DBDIR)
+                mkdir(DBFILES)
+                files = []
+                counter = Counter()
+                for qry, name in zip(queries, res["names"][db]):
+                    counter.next()
+                    fpath = u"{}/{}:{}-{}.sql".format(DBFILES, counter.get_textnum(), counter.get_intnum(), name)
                     with io.open(fpath, "w", encoding="utf-8") as fstream:
                         fstream.write(qry)
                     files.append(u"\\i '{}';".format(fpath))
@@ -55,4 +86,4 @@ if args.commit:
                     fstream.write(u"\n".join(queries))
 
 else:
-    print "Need write init logic =)"
+    parser.print_help()

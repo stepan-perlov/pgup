@@ -24,6 +24,7 @@ class Table(object):
         self._fpath = fpath
         self._like = []
         self._columns = OrderedDict([])
+        self._inherits = []
         with open(fpath) as fstream:
             table = yaml.load(fstream)
 
@@ -70,19 +71,21 @@ class Table(object):
         })
 
     def create(self):
-        query = u"CREATE TABLE {}();\n".format(self)
-        columns_actions, columns_comments = [], []
-        for column in self._columns.values():
-            actions, comment = column.add()
-            columns_actions += actions
-            columns_comments.append(comment)
+        columns = []
+        comments_on_columns = []
+        for name, clm in self._columns.iteritems():
+            columns.append({"name": name, "definition":clm.definition})
+            comments_on_columns.append({"name": name, "comment": clm.description})
 
         Table._create += 1
 
-        return query + j2.get_template("alter_table.j2").render({
+        return j2.get_template("create_table.j2").render({
             "name": str(self),
-            "columns_actions": columns_actions,
-            "columns_comments": columns_comments
+            "comment": self.description,
+            "like": self._like,
+            "columns": columns,
+            "comments_on_columns": comments_on_columns,
+            "inherits": self._inherits
         })
 
     def drop(self):
@@ -101,6 +104,11 @@ class Table(object):
         else:
             raise TableException("table must specified - {}".format(self._fpath))
 
+        if "description" in table:
+            self.description = table["description"]
+        else:
+            self.description = None
+
         HAVE_COLUMNS = "columns" in table
         HAVE_INHERITS = "inherits" in table
 
@@ -116,6 +124,7 @@ class Table(object):
                     value = clm[name]
                     if name.upper() == "LIKE":
                         self._like.append(value)
+                        continue
                     else:
                         if type(value) == str:
                             dump = {
@@ -130,7 +139,7 @@ class Table(object):
                                 raise TableException("type must specified - {}:{}".format(self._fpath, clm))
                         else:
                             raise TableException("Incorrect value type - {}:{}".format(self._fpath, clm))
-                    self._add_column.append(Column(i, dump))
+                    self._add_column(Column(i, dump))
                 # old mezzo table yaml style
                 else:
                     if not "name" in clm:
@@ -196,9 +205,14 @@ class Column(object):
         self.index = index
         self.name = params["name"]
         self.type = params["type"]
-        self.not_null = "not_null" in params and params["not_null"]
+        self.definition = u"{} {}".format(self.name, self.type)
+        if "not_null" in params:
+            self.not_null = params["not_null"]
+            if self.not_null:
+                self.definition = u"{} NOT NULL".format(self.definition)
         if "default" in params:
             self.default = params["default"]
+            self.definition = u"{} DEFAULT {}".format(self.definition, self.default)
         else:
             self.default = None
         if "description" in params:

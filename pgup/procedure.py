@@ -113,6 +113,3 @@ class Procedure(object):
             queries.append(proc.create())
         Procedure._create += 1
         return "\n".join(queries) + "\n"
-
-sql = SqlFile("/home/stepan/Desktop/mezzo/gui_db/helpers/internal/_get_order_by.sql")
-print sql.find_procedures_headers()

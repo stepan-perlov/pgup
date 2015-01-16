@@ -80,20 +80,30 @@ class Patch(object):
 
     def make(self, structure):
         queries = []
-        queries += [table.drop() for table in self._deleted_tables]
-        queries += [procedure.drop() for procedure in self._deleted_procedures]
+        names = []
+        for table in self._deleted_tables:
+            queries.append(table.drop())
+            names.append("drop-table")
+
+        for procedure in self._deleted_procedures:
+            queries.append(procedure)
+            names.append("drop-procedure")
 
         for name, table in self._modify_tables.iteritems():
             if name in structure._tables:
                 old = structure._tables[name]
                 queries.append(old.alter(table))
+                names.append("alter-table")
             else:
                 queries.append(table.create())
+                names.append("create-table")
 
         for name, procedure in self._modify_procedures.iteritems():
             if name in structure._procedures:
                 old = structure._procedures[name]
                 queries.append(old.drop())
+                names.append("drop-procedure")
             queries.append(procedure.create())
+            names.append("create-procedure")
 
-        return queries
+        return queries, names
