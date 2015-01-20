@@ -7,7 +7,10 @@ from patch import Patch
 def diff(commit, config):
     pipe = git("diff --name-status {} HEAD".format(commit), pipe=True)
     regexp = "\\\\|".join( ["^[ADMR]\\\\s\\\\+{}".format(db) for db in config.databases] )
-    diff = pipe.grep(regexp).strip().split("\n")
+    diff = []
+    res = pipe.grep(regexp).strip()
+    if res:
+        diff = res.split("\n")
 
     structure = {}
     patch = {}
