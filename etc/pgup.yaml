@@ -1,6 +1,6 @@
 databases:
-  - ^gui_db
-  - ^cached_db
+  - gui_db
+  - cached_db
 tables:
   - tables
 procedures:
