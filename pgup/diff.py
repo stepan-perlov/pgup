@@ -27,7 +27,12 @@ def diff(commit, config):
         patch[db].add_file(path, fpath, action)
 
     # load structure of commit to update
-    HEAD = git("rev-parse HEAD").strip()
+    dump = git("rev-parse --abbrev-ref HEAD").strip()
+    if dump == "HEAD":
+        HEAD = git("rev-parse HEAD").strip()
+    else:
+        HEAD = dump
+
     git("checkout {}".format(commit))
     [structure[db].load_files() for db in structure]
     git("checkout {}".format(HEAD))
