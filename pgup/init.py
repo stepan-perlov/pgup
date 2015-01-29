@@ -17,11 +17,11 @@ def get_sql_from_structure(structure):
             queries.append(u"CREATE SCHEMA IF NOT EXISTS {};".format(value))
         elif name == "table":
             queries.append(Table(value).create())
-        elif name == "function":
-            with io.open(value, "r", encoding="utf-8") as fstream:
-                queries.append(fstream.read())
         elif name == "sql":
             queries.append(value.rstrip(u";") + u";")
+        else:
+            with io.open(value, "r", encoding="utf-8") as fstream:
+                queries.append(fstream.read())
         names.append(name)
     return queries, names
 
