@@ -41,9 +41,9 @@ class SqlFile(object):
             Word(alphas, alphanums + "[] ", ) + Suppress(Optional(Literal("(") + Word(nums) + Literal(")")))
         )
         PRM = (
-            Optional(IN | OUT | INOUT | VARIADIC | (OUT + VARIADIC)) +
+            (Optional(IN | OUT | INOUT | VARIADIC | (OUT + VARIADIC)) +
             Optional(ALIAS) +
-            TYPE
+            TYPE) | TYPE
         ).setParseAction(lambda res: " ".join([w.strip() for w in res]))
         COMMENT = "--" + restOfLine
         COMMA = Suppress(",")
