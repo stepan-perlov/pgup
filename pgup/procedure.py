@@ -38,7 +38,7 @@ class SqlFile(object):
         NAME = (Word(alphas, alphanums + "_."))("name")
         ALIAS = Word(alphas, alphanums + "_")
         TYPE = (
-            Word(alphas, alphanums + "[] ", ) + Suppress(Optional(Literal("(") + Word(nums) + Literal(")")))
+            Word(alphas, alphanums + "[]. ", ) + Suppress(Optional(Literal("(") + Word(nums) + Literal(")")))
         )
         PRM = (
             (Optional(IN | OUT | INOUT | VARIADIC | (OUT + VARIADIC)) +
