@@ -65,7 +65,6 @@ class Patch(object):
         elif IS_PROCEDURE:
             sql_file = SqlFile(fpath)
             for header in sql_file.find_procedures_headers():
-                print header
                 procedure = Procedure(sql_file, header)
                 if IS_DELETED:
                     if str(procedure) in self._deleted_procedures:

@@ -106,10 +106,7 @@ class Procedure(object):
     def create(self):
         queries = []
         queries.append(self._sql_file.get())
-        print str(self),"lvl1"
-        print self._overloaded
         for proc in self._overloaded:
-            print str(proc),"lvl2"
             queries.append(proc.create())
         Procedure._create += 1
         return "\n".join(queries) + "\n"
