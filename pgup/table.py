@@ -90,7 +90,7 @@ class Table(object):
 
     def drop(self):
         Table._drop += 1
-        return u"DROP TABLE {}".format(self)
+        return u"DROP TABLE {};".format(self)
 
     def _add_column(self, column):
         if column.name in self._columns:

@@ -45,7 +45,8 @@ class Patch(object):
         self._config = config
         self._featured_schemas = []
         self._modify_tables, self._modify_procedures = {}, {}
-        self._deleted_tables, self._deleted_procedures = {}, {}
+        self._deleted_tables, self._deleted_procedures = [], []
+        self._queries, self._names = [], []
 
     @staticmethod
     def overview():
@@ -53,40 +54,44 @@ class Patch(object):
         return "\n".join(overview_list)
 
     def add_file(self, folder, fpath, action):
+        IS_DELETED = action == "D"
         IS_TABLE = folder in self._config.tables
         IS_PROCEDURE = folder in self._config.procedures
-        IS_DELETED = action == "D"
-        if IS_TABLE:
-            table = Table(fpath)
-            if IS_DELETED:
-                self._deleted_tables[str(table)] = table
+
+        if IS_DELETED:
+            if IS_TABLE:
+                self._deleted_tables.append(fpath)
+            elif IS_PROCEDURE:
+                self._deleted_procedures.append(fpath)
             else:
-                self._modify_tables[str(table)] = table
+                raise Exception("Internal error")
+        elif IS_TABLE:
+            table = Table(fpath)
+            self._modify_tables[str(table)] = table
         elif IS_PROCEDURE:
             sql_file = SqlFile(fpath)
             for header in sql_file.find_procedures_headers():
                 procedure = Procedure(sql_file, header)
-                if IS_DELETED:
-                    if str(procedure) in self._deleted_procedures:
-                        self._deleted_procedures[str(procedure)].add_overloaded(procedure)
-                    else:
-                        self._deleted_procedures[str(procedure)] = procedure
+                if str(procedure) in self._modify_procedures:
+                    self._modify_procedures[str(procedure)].add_overloaded(procedure)
                 else:
-                    if str(procedure) in self._modify_procedures:
-                        self._modify_procedures[str(procedure)].add_overloaded(procedure)
-                    else:
-                        self._modify_procedures[str(procedure)] = procedure
+                    self._modify_procedures[str(procedure)] = procedure
+
+    def drop_statements(self):
+        for fpath in self._deleted_tables:
+            table = Table(fpath)
+            self._queries.append(table.drop())
+            self._names.append("drop-table")
+
+        for fpath in self._deleted_procedures:
+            sql_file = SqlFile(fpath)
+            for header in sql_file.find_procedures_headers():
+                procedure = Procedure(sql_file, header)
+                self._queries.append(procedure.drop())
+                self._names.append("drop-procedure")
 
     def make(self, structure):
-        queries = []
-        names = []
-        for table in self._deleted_tables:
-            queries.append(table.drop())
-            names.append("drop-table")
-
-        for procedure in self._deleted_procedures:
-            queries.append(procedure)
-            names.append("drop-procedure")
+        queries, names = self._queries, self._names
 
         for name, table in self._modify_tables.iteritems():
             if name in structure._tables:

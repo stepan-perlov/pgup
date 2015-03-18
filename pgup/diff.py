@@ -27,6 +27,7 @@ def diff(commit, config):
         patch[db].add_file(path, fpath, action)
 
     # load structure of commit to update
+    # and make drop statements
     dump = git("rev-parse --abbrev-ref HEAD").strip()
     if dump == "HEAD":
         HEAD = git("rev-parse HEAD").strip()
@@ -34,7 +35,9 @@ def diff(commit, config):
         HEAD = dump
 
     git("checkout {}".format(commit))
-    [structure[db].load_files() for db in structure]
+    for db in config.databases:
+        structure[db].load_files()
+        patch[db].drop_statements()
     git("checkout {}".format(HEAD))
 
     queries = {}
