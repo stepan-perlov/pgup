@@ -36,7 +36,7 @@ def init(gui_db_structure_path, cached_db_structure_path, config):
     if cached_db_structure_path and cached_db_structure_path != "gui_db":
         with open(cached_db_structure_path) as fstream:
             cached_db_structure = yaml.load(fstream)
-        queries["cached_db"], names["cached_db"] = get_sql_from_structure(gui_db_structure)
+        queries["cached_db"], names["cached_db"] = get_sql_from_structure(cached_db_structure)
 
     res = {
         "overview": Table.overview(),
