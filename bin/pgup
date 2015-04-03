@@ -2,10 +2,14 @@
 # -*- coding: utf-8 -*-
 import io
 import os
+import sys
 import argparse
+import logging
+import logging.handlers
+import yaml
 from pake.shell import mkdir, rm
 from pgup import Config as PgupConfig
-from pgup import init
+from pgup import build_init
 from pgup import diff
 from pgup import Counter
 from pgup.errors import PgupException
@@ -13,77 +17,71 @@ from pgup.errors import PgupException
 if not os.path.exists(".git"):
     raise PgupException(".git folder not exists. Must run from project root.")
 
+# For adding dynamic dbstructure parameters
+config_parser = argparse.ArgumentParser(add_help=False)
+config_parser.add_argument("--config", default="/etc/pgup.yaml", help="Path to pgup configuration")
+config = config_parser.parse_known_args()[0].config
+pgup_config = PgupConfig(config)
+
 parser = argparse.ArgumentParser(description="util for build postgresql structure")
-parser.add_argument("-m", "--commit", default=None, help="Commit which need update, if None - run init")
-parser.add_argument("--gui_db_structure", default=None, help="Path to gui_db structure.yaml")
-parser.add_argument("--cached_db_structure", default=None, help="Path to cached_db structure.yaml")
-parser.add_argument("-c", "--config", default="/etc/pgup.yaml", help="Path to pgup configuration")
-parser.add_argument("-b", "--build", default="build", help="Path for pgup build")
-parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Puts debug messages if exists")
-parser.add_argument("-mf", "--manyfiles", action="store_true", default=False, help="Build many files, default one file")
+parser.add_argument("--config", default="/etc/pgup.yaml", help="Path to pgup configuration")
+parser.add_argument("--commit", default=None, help="Commit which need update, if not exists - build init")
+parser.add_argument("--build", default="build/pgup", help="Path for pgup build")
+parser.add_argument("--verbose", action="store_true", default=False, help="Puts debug messages")
+
+# Adding dynamic structure parameter, depends on databases section in pgup.yaml
+structures = []
+for dbname in pgup_config.databases:
+    param = "{}_structure".format(dbname)
+    parser.add_argument("--{}".format(param), default=None, help="Path to {} structure".format(dbname))
+    structures.append((dbname, param))
+
 args = parser.parse_args()
+argv = vars(args)
 
-pgup_config = PgupConfig(args.config)
-
-ROOT = args.build
-BUILD = u"{}/pgup".format(args.build)
-
-if not os.path.exists(ROOT):
-    mkdir(u"-p {}".format(ROOT))
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger('pgup')
+if args.verbose:
+    logger.setLevel(logging.DEBUG)
 else:
-    rm(u"-rf {}".format(BUILD))
+    logger.setLevel(logging.INFO)
 
-mkdir(BUILD)
 
-if args.commit:
+# Checking, that any of structures exists
+ANY_STRUCTURE_EXISTS = False
+for dbname, param in structures:
+    if argv[param]:
+        ANY_STRUCTURE_EXISTS = True
+    else:
+        logger.info("{} not exists".format(param))
+
+# Remove build directory
+if os.path.exists(args.build):
+    logging.debug("rm -rf {}".format(args.build))
+    rm(u"-rf {}".format(args.build))
+
+if args.commit and ANY_STRUCTURE_EXISTS:
     res = diff(args.commit, pgup_config)
-    with open(u"{}/overview.txt".format(BUILD), "w") as fstream:
+    with open(u"{}/overview.txt".format(args.build), "w") as fstream:
         fstream.write(res["overview"])
     for db, queries in res["queries"].iteritems():
         if queries:
-            DBDIR = u"{}/{}".format(BUILD, db)
+            DBDIR = u"{}/{}".format(args.build, db)
             mkdir(DBDIR)
-            if args.manyfiles:
-                DBFILES = u"{}/sql".format(DBDIR)
-                mkdir(DBFILES)
-                files = []
-                counter = Counter()
-                for qry, name in zip(queries, res["names"][db]):
-                    counter.next()
-                    fpath = u"{}/{}:{}-{}.sql".format(DBFILES, counter.get_textnum(), counter.get_intnum(), name)
-                    with io.open(fpath, "w", encoding="utf-8") as fstream:
-                        fstream.write(qry)
-                    files.append(u"\\i '{}';".format(fpath))
-                with io.open(u"{}/execute.sql".format(DBDIR), "w", encoding="utf-8") as fstream:
-                    fstream.write(u"\n".join(files))
-            else:
-                with io.open(u"{}/execute.sql".format(DBDIR), "w", encoding="utf-8") as fstream:
-                    fstream.write(u"\n".join(queries))
+            DBFILES = u"{}/sql".format(DBDIR)
+            mkdir(DBFILES)
+            files = []
+            counter = Counter()
+            for qry, name in zip(queries, res["names"][db]):
+                counter.next()
+                fpath = u"{}/{}:{}-{}.sql".format(DBFILES, counter.get_textnum(), counter.get_intnum(), name)
+                with io.open(fpath, "w", encoding="utf-8") as fstream:
+                    fstream.write(qry)
+                files.append(u"\\i '{}';".format(fpath))
+            with io.open(u"{}/execute.sql".format(DBDIR), "w", encoding="utf-8") as fstream:
+                fstream.write(u"\n".join(files))
 
-elif args.gui_db_structure:
-    res = init(args.gui_db_structure, args.cached_db_structure, pgup_config)
-    with open(u"{}/overview.txt".format(BUILD), "w") as fstream:
-        fstream.write(res["overview"])
-    for db, queries in res["queries"].iteritems():
-        if queries:
-            DBDIR = u"{}/{}".format(BUILD, db)
-            mkdir(DBDIR)
-            if args.manyfiles:
-                DBFILES = u"{}/sql".format(DBDIR)
-                mkdir(DBFILES)
-                files = []
-                counter = Counter()
-                for qry, name in zip(queries, res["names"][db]):
-                    counter.next()
-                    fpath = u"{}/{}:{}-{}.sql".format(DBFILES, counter.get_textnum(), counter.get_intnum(), name)
-                    with io.open(fpath, "w", encoding="utf-8") as fstream:
-                        fstream.write(qry)
-                    files.append(u"\\i '{}';".format(fpath))
-                with io.open(u"{}/execute.sql".format(DBDIR), "w", encoding="utf-8") as fstream:
-                    fstream.write(u"\n".join(files))
-            else:
-                with io.open(u"{}/execute.sql".format(DBDIR), "w", encoding="utf-8") as fstream:
-                    fstream.write(u"\n".join(queries))
-
+elif ANY_STRUCTURE_EXISTS:
+    build_init(args, argv, structures, pgup_config)
 else:
     parser.print_help()
