@@ -205,6 +205,9 @@ class Column(object):
         self.index = index
         self.name = params["name"]
         self.type = params["type"]
+        self.not_null = False
+        self.default = None
+        self.description = None
         self.definition = u"{} {}".format(self.name, self.type)
         if "not_null" in params:
             self.not_null = params["not_null"]
@@ -215,12 +218,8 @@ class Column(object):
         if "default" in params:
             self.default = params["default"]
             self.definition = u"{} DEFAULT {}".format(self.definition, self.default)
-        else:
-            self.default = None
         if "description" in params:
             self.description = params["description"]
-        else:
-            self.description = None
 
     def __eq__(self, column):
         if type(column) != Column:
