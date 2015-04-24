@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import io
 import os
 import sys
 import argparse
 import logging
 import logging.handlers
 import yaml
-from pake.shell import mkdir, rm
+from pake.shell import rm
 from pgup import Config as PgupConfig
 from pgup import build_init
-from pgup import diff
-from pgup import Counter
+from pgup import build_diff
 from pgup.errors import PgupException
 
 if not os.path.exists(".git"):
@@ -60,27 +58,8 @@ if os.path.exists(args.build):
     logging.debug("rm -rf {}".format(args.build))
     rm(u"-rf {}".format(args.build))
 
-if args.commit and ANY_STRUCTURE_EXISTS:
-    res = diff(args.commit, pgup_config)
-    with open(u"{}/overview.txt".format(args.build), "w") as fstream:
-        fstream.write(res["overview"])
-    for db, queries in res["queries"].iteritems():
-        if queries:
-            DBDIR = u"{}/{}".format(args.build, db)
-            mkdir(DBDIR)
-            DBFILES = u"{}/sql".format(DBDIR)
-            mkdir(DBFILES)
-            files = []
-            counter = Counter()
-            for qry, name in zip(queries, res["names"][db]):
-                counter.next()
-                fpath = u"{}/{}:{}-{}.sql".format(DBFILES, counter.get_textnum(), counter.get_intnum(), name)
-                with io.open(fpath, "w", encoding="utf-8") as fstream:
-                    fstream.write(qry)
-                files.append(u"\\i '{}';".format(fpath))
-            with io.open(u"{}/execute.sql".format(DBDIR), "w", encoding="utf-8") as fstream:
-                fstream.write(u"\n".join(files))
-
+if args.commit:
+    build_diff(args, argv, structures, pgup_config)
 elif ANY_STRUCTURE_EXISTS:
     build_init(args, argv, structures, pgup_config)
 else:

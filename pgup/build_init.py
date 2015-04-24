@@ -10,7 +10,6 @@ from table import Table
 from errors import PgupException
 from counter import Counter
 
-logger = logging.getLogger("pgup")
 
 def parse_structure(structure_path):
     with open(structure_path) as fstream:
@@ -46,6 +45,7 @@ def parse_structure(structure_path):
     }
 
 def build_init(args, argv, structures, pgup_config):
+    logger = logging.getLogger("pgup.build_init")
     data = []
     for dbname, param in structures:
         if argv[param]:

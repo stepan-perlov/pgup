@@ -210,6 +210,8 @@ class Column(object):
             self.not_null = params["not_null"]
             if self.not_null:
                 self.definition = u"{} NOT NULL".format(self.definition)
+        else:
+            self.not_null = None
         if "default" in params:
             self.default = params["default"]
             self.definition = u"{} DEFAULT {}".format(self.definition, self.default)
