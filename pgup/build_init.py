@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-import re
+import os
 import io
+import json
 import logging
 import collections
 
@@ -11,9 +12,16 @@ from errors import PgupException
 from counter import Counter
 
 
-def parse_structure(structure_path):
-    with open(structure_path) as fstream:
-        structure = yaml.load(fstream)
+def parse_structure(structure_string):
+    if structure_string.endswith(".yaml"):
+        fpath = structure_string
+        if os.path.exists(fpath):
+            with open(fpath) as fstream:
+                structure = yaml.load(fstream)
+        else:
+            raise Exception("Structure file not exists: {}".format(fpath))
+    else:
+        structure = json.loads(structure_string)
 
     created = collections.defaultdict(int)
 
@@ -40,17 +48,18 @@ def parse_structure(structure_path):
         "queries": queries,
         "names": names,
         "overview": u" / ".join(
-            [u"{} {}".format(name, count) for name, count in created.iteritems()]
+            [u"{} {}".format(obj_type, count) for obj_type, count in created.iteritems()]
         )
     }
+
 
 def build_init(args, argv, structures, pgup_config):
     logger = logging.getLogger("pgup.build_init")
     data = []
     for dbname, param in structures:
         if argv[param]:
-            structure_path = argv[param]
-            data.append( (dbname, parse_structure(structure_path)) )
+            structure_string = argv[param]
+            data.append((dbname, parse_structure(structure_string)))
 
     for dbname, dbdata in data:
         if dbdata["queries"]:

@@ -4,6 +4,7 @@ from pake.shell import git, find
 from table import Table, Column
 from procedure import SqlFile, Procedure
 
+
 class DbChanges(object):
     def __init__(self, db, config):
         self._db = db
@@ -109,7 +110,7 @@ class DiffMaker(object):
             from commit
             which started with config.databases names
         """
-        regexp = "\\\\|".join( ["^[ADMR]\\\\s\\\\+{}".format(db) for db in config.databases] )
+        regexp = "\\\\|".join(["^[ADMR]\\\\s\\\\+{}".format(db) for db in config.databases])
         pipe = git("diff --name-status {} HEAD".format(self._commit), pipe=True)
         res = pipe.grep(regexp).strip()
         if res:

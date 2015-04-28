@@ -74,7 +74,7 @@ class Table(object):
         columns = []
         comments_on_columns = []
         for name, clm in self._columns.iteritems():
-            columns.append({"name": name, "definition":clm.definition})
+            columns.append({"name": name, "definition": clm.definition})
             comments_on_columns.append({"name": name, "comment": clm.description})
 
         Table._create += 1
@@ -186,10 +186,10 @@ class Column(object):
         if self.not_null:
             actions.append(Column.SET_NOT_NULL.format(name=self.name))
 
-        if self.default != None:
+        if self.default is None:
             actions.append.append(Column.SET_DEFAULT.format(name=self.name, default=self.default))
 
-        if self.description == None:
+        if self.description is None:
             comment = u"{} IS 'NULL'".format(self.name)
         else:
             comment = u"{} IS '{}'".format(self.name, self.description)
@@ -213,8 +213,6 @@ class Column(object):
             self.not_null = params["not_null"]
             if self.not_null:
                 self.definition = u"{} NOT NULL".format(self.definition)
-        else:
-            self.not_null = None
         if "default" in params:
             self.default = params["default"]
             self.definition = u"{} DEFAULT {}".format(self.definition, self.default)
@@ -244,7 +242,7 @@ class Column(object):
             eq = False
 
         if self.default != column.default:
-            if column.default == None:
+            if column.default is None:
                 Column.actions.append(Column.DROP_DEFAULT.format(name=column.name))
                 Column._drop_default += 1
             else:
@@ -253,7 +251,7 @@ class Column(object):
             eq = False
 
         if self.description != column.description:
-            if column.description == None:
+            if column.description is None:
                 Column.comment = u"{} IS 'NULL'".format(column.name)
             else:
                 Column.comment = u"{} IS '{}'".format(column.name, column.description)

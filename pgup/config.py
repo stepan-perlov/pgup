@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import json
 import yaml
 from errors import ConfigException
 
@@ -7,12 +8,16 @@ from errors import ConfigException
 class Config(object):
     _cache = {}
 
-    def __init__(self, fpath="/etc/pgup.yaml"):
-        if os.path.exists(fpath):
-            with open(fpath) as fstream:
-                config = yaml.load(fstream)
+    def __init__(self, config_string="/etc/pgup.yaml"):
+        if config_string.endswith(".yaml"):
+            fpath = config_string
+            if os.path.exists(fpath):
+                with open(fpath) as fstream:
+                    config = yaml.load(fstream)
+            else:
+                raise ConfigException("Config not exists: {}".format(fpath))
         else:
-            raise ConfigException("Config not found: {}".format(fpath))
+            config = json.loads(config_string)
 
         if type(config) == dict:
             self.__dict__ = config
