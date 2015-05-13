@@ -5,7 +5,7 @@ import sys
 import argparse
 import logging
 import logging.handlers
-from pake.shell import rm
+from pake.shell import rm, mkdir
 from pgup import Config as PgupConfig
 from pgup import build_init
 from pgup import build_diff
@@ -61,6 +61,8 @@ for dbname, param in structures:
 if os.path.exists(args.build):
     logging.debug("rm -rf {}".format(args.build))
     rm(u"-rf {}".format(args.build))
+
+mkdir(u"-p {}".format(args.build))
 
 if args.commit:
     build_diff(args, argv, structures, pgup_config)

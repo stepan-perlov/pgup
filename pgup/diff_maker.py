@@ -143,17 +143,29 @@ class DiffMaker(object):
         """
         action, fpath = line.split("\t")
         split = fpath.split("/")
-        db, schema, path = split[0], split[1], split[2]
+        path = None
+        schema = None
+        if len(split) > 2:
+            db, schema, path = split[0], split[1], split[2]
+        elif len(split) == 2:
+            db, schema = split[0], split[1]
 
         if path in self._config.tables:
             file_type = "table"
         elif path in self._config.procedures:
             file_type = "procedure"
+        elif os.path.islink(fpath):
+            file_type = "symlink"
+            # TODO add symlink logic
+            return
         else:
             file_type = "unknow"
             self._logger.warning("Unknow file type: {}".format(fpath))
+            return
 
-        self._changes[db].add_schema(schema)
+        if schema:
+            self._changes[db].add_schema(schema)
+
         if action == "D":
             self._changes[db].add_deleted_file(file_type, fpath)
         else:
@@ -182,5 +194,5 @@ class DiffMaker(object):
         return queries, names
 
     def overview(self):
-        overview_list = [cls.overview() for cls in [Table, Column, Procedure]]
-        return "\n".join(overview_list)
+        overview_list = ["  " + cls.overview() for cls in [Table, Column, Procedure]]
+        return "\n".join(overview_list) + "\n"

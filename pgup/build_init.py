@@ -49,7 +49,7 @@ def parse_structure(structure_string):
         "names": names,
         "overview": u" / ".join(
             [u"{} {}".format(obj_type, count) for obj_type, count in created.iteritems()]
-        )
+        ) + "\n"
     }
 
 
@@ -84,9 +84,12 @@ def build_init(args, argv, structures, pgup_config):
             with io.open(u"{}/execute.sql".format(DBDIR), "w", encoding="utf-8") as fstream:
                 fstream.write(u"\n".join(files))
             # overview about created objects
-            with io.open(u"{}/overview.txt".format(DBDIR), "w", encoding="utf-8") as fstream:
-                fstream.write(dbdata["overview"])
+            with io.open(u"{}/overview.txt".format(args.build), "a", encoding="utf-8") as fstream:
+                fstream.write("{}:\n".format(dbname) + dbdata["overview"])
 
             logger.info("{}: {}".format(dbname, DBDIR))
         else:
+            with io.open(u"{}/overview.txt".format(args.build), "a", encoding="utf-8") as fstream:
+                fstream.write(u"{}: Queries not exists\n".format(dbname))
+
             logger.info("{}: Queries not exists".format(dbname))

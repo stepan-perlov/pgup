@@ -187,7 +187,7 @@ class Column(object):
             actions.append(Column.SET_NOT_NULL.format(name=self.name))
 
         if self.default is None:
-            actions.append.append(Column.SET_DEFAULT.format(name=self.name, default=self.default))
+            actions.append(Column.SET_DEFAULT.format(name=self.name, default=self.default))
 
         if self.description is None:
             comment = u"{} IS 'NULL'".format(self.name)
