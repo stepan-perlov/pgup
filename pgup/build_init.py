@@ -12,7 +12,7 @@ from errors import PgupException
 from counter import Counter
 
 
-def parse_structure(structure_string):
+def load_structure(structure_string):
     if structure_string.endswith(".yaml"):
         fpath = structure_string
         if os.path.exists(fpath):
@@ -22,9 +22,10 @@ def parse_structure(structure_string):
             raise Exception("Structure file not exists: {}".format(fpath))
     else:
         structure = json.loads(structure_string)
+    return structure
 
+def parse_structure(structure):
     created = collections.defaultdict(int)
-
     queries = []
     names = []
     for obj in structure["modules"]:
@@ -59,7 +60,8 @@ def build_init(args, argv, structures, pgup_config):
     for dbname, param in structures:
         if argv[param]:
             structure_string = argv[param]
-            data.append((dbname, parse_structure(structure_string)))
+            structure = load_structure(structure_string)
+            data.append((dbname, parse_structure(structure)))
 
     for dbname, dbdata in data:
         if dbdata["queries"]:

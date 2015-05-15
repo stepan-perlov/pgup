@@ -9,7 +9,7 @@ from counter import Counter
 def build_diff(args, argv, structures, pgup_config):
     logger = logging.getLogger("pgup.build_diff")
 
-    diffMaker = DiffMaker(args.commit, pgup_config)
+    diffMaker = DiffMaker(args.commit, argv, pgup_config)
     diffMaker.prepare()
     queries, names = diffMaker.make()
     overview = diffMaker.overview()

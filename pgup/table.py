@@ -186,10 +186,10 @@ class Column(object):
         if self.not_null:
             actions.append(Column.SET_NOT_NULL.format(name=self.name))
 
-        if self.default is None:
+        if self.default != None:
             actions.append(Column.SET_DEFAULT.format(name=self.name, default=self.default))
 
-        if self.description is None:
+        if self.description == None:
             comment = u"{} IS 'NULL'".format(self.name)
         else:
             comment = u"{} IS '{}'".format(self.name, self.description)
@@ -242,7 +242,7 @@ class Column(object):
             eq = False
 
         if self.default != column.default:
-            if column.default is None:
+            if column.default == None:
                 Column.actions.append(Column.DROP_DEFAULT.format(name=column.name))
                 Column._drop_default += 1
             else:
@@ -251,7 +251,7 @@ class Column(object):
             eq = False
 
         if self.description != column.description:
-            if column.description is None:
+            if column.description == None:
                 Column.comment = u"{} IS 'NULL'".format(column.name)
             else:
                 Column.comment = u"{} IS '{}'".format(column.name, column.description)
