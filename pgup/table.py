@@ -219,18 +219,18 @@ class Column(object):
         if "description" in params:
             self.description = params["description"]
 
-    def __eq__(self, column):
+    def __ne__(self, column):
         if type(column) != Column:
             raise ColumnException("Column object can't compare with {}".format(type(column)))
 
-        eq = True
+        ne = False
         Column.actions = []
         Column.comment = None
 
         if self.type != column.type:
             Column.actions.append(Column.SET_DATA_TYPE.format(name=column.name, type=column.type))
             Column._set_data_type += 1
-            eq = False
+            ne = True
 
         if self.not_null != column.not_null:
             if column.not_null:
@@ -239,7 +239,7 @@ class Column(object):
             else:
                 Column.actions.append(Column.DROP_NOT_NULL.format(name=column.name))
                 Column._drop_not_null += 1
-            eq = False
+            ne = True
 
         if self.default != column.default:
             if column.default == None:
@@ -248,13 +248,13 @@ class Column(object):
             else:
                 Column.actions.append(Column.SET_DEFAULT.format(name=column.name, default=column.default))
                 Column._set_default += 1
-            eq = False
+            ne = True
 
         if self.description != column.description:
             if column.description == None:
                 Column.comment = u"{} IS 'NULL'".format(column.name)
             else:
                 Column.comment = u"{} IS '{}'".format(column.name, column.description)
-            eq = False
+            ne = True
 
-        return eq
+        return ne
