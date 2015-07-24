@@ -174,7 +174,7 @@ class DiffMaker(object):
             which started with config.databases names
         """
         regexp = "\\\\|".join(["^[ADMR]\\\\s\\\\+{}".format(db) for db in config.databases])
-        pipe = git("diff --name-status {} HEAD".format(self._commit), pipe=True)
+        pipe = git("diff --name-status {} HEAD".format(self._argv["commit"]), pipe=True)
         res = pipe.grep(regexp).strip()
         if res:
             diff = res.split("\n")
@@ -188,11 +188,10 @@ class DiffMaker(object):
             changes[db] = DbChanges(db, config)
         return changes
 
-    def __init__(self, commit, argv, config):
-        self._commit = commit
+    def __init__(self, argv, config):
         self._argv = argv
         self._config = config
-        self._diff = self._get_diff(commit, config)
+        self._diff = self._get_diff(argv["commit"], config)
         self._changes = self._init_changes(config)
         self._logger = logging.getLogger('pgup.diff.DiffMaker')
         self._overview = ""
@@ -240,7 +239,7 @@ class DiffMaker(object):
 
         for db, dbchange in self._changes.iteritems():
             dbchange.find_symlink()
-        git("checkout {}".format(self._commit))
+        git("checkout {}".format(self._argv["commit"]))
         for db, dbchange in self._changes.iteritems():
             dbchange.load_schemas_objects()
             dbchange.find_symlink_diff()

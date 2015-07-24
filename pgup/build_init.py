@@ -54,7 +54,7 @@ def parse_structure(structure):
     }
 
 
-def build_init(args, argv, structures, pgup_config):
+def build_init(argv, structures, pgup_config):
     logger = logging.getLogger("pgup.build_init")
     data = []
     for dbname, param in structures:
@@ -65,7 +65,7 @@ def build_init(args, argv, structures, pgup_config):
 
     for dbname, dbdata in data:
         if dbdata["queries"]:
-            DBDIR = u"{}/{}".format(args.build, dbname)
+            DBDIR = u"{}/{}".format(argv["build"], dbname)
             DBFILES = u"{}/sql".format(DBDIR)
             mkdir("-p {}".format(DBFILES))
             files = []
@@ -86,12 +86,12 @@ def build_init(args, argv, structures, pgup_config):
             with io.open(u"{}/execute.sql".format(DBDIR), "w", encoding="utf-8") as fstream:
                 fstream.write(u"\n".join(files))
             # overview about created objects
-            with io.open(u"{}/overview.txt".format(args.build), "a", encoding="utf-8") as fstream:
+            with io.open(u"{}/overview.txt".format(argv["build"]), "a", encoding="utf-8") as fstream:
                 fstream.write("{}:\n".format(dbname) + dbdata["overview"])
 
             logger.info("{}: {}".format(dbname, DBDIR))
         else:
-            with io.open(u"{}/overview.txt".format(args.build), "a", encoding="utf-8") as fstream:
+            with io.open(u"{}/overview.txt".format(argv["build"]), "a", encoding="utf-8") as fstream:
                 fstream.write(u"{}: Queries not exists\n".format(dbname))
 
             logger.info("{}: Queries not exists".format(dbname))

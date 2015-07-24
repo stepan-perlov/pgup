@@ -65,8 +65,8 @@ if os.path.exists(args.build):
 mkdir(u"-p {}".format(args.build))
 
 if args.commit:
-    build_diff(args, argv, structures, pgup_config)
+    build_diff(argv, structures, pgup_config)
 elif ANY_STRUCTURE_EXISTS:
-    build_init(args, argv, structures, pgup_config)
+    build_init(argv, structures, pgup_config)
 else:
     parser.print_help()

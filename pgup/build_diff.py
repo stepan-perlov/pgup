@@ -6,10 +6,10 @@ from diff_maker import DiffMaker
 from counter import Counter
 
 
-def build_diff(args, argv, structures, pgup_config):
+def build_diff(argv, structures, pgup_config):
     logger = logging.getLogger("pgup.build_diff")
 
-    diffMaker = DiffMaker(args.commit, argv, pgup_config)
+    diffMaker = DiffMaker(argv, pgup_config)
     diffMaker.prepare()
     queries, names = diffMaker.make()
     overview = diffMaker.overview()
@@ -17,7 +17,7 @@ def build_diff(args, argv, structures, pgup_config):
     for dbname, dbqueries in queries.iteritems():
         if dbqueries:
             dbnames = names[dbname]
-            DBDIR = u"{}/{}".format(args.build, dbname)
+            DBDIR = u"{}/{}".format(argv["build"], dbname)
             DBFILES = u"{}/sql".format(DBDIR)
             mkdir("-p {}".format(DBFILES))
             files = []
@@ -37,11 +37,11 @@ def build_diff(args, argv, structures, pgup_config):
             with io.open(u"{}/execute.sql".format(DBDIR), "w", encoding="utf-8") as fstream:
                 fstream.write(u"\n".join(files))
             # overview about created objects
-            with io.open(u"{}/overview.txt".format(args.build), "a", encoding="utf-8") as fstream:
+            with io.open(u"{}/overview.txt".format(argv["build"]), "a", encoding="utf-8") as fstream:
                 fstream.write("{}:\n".format(dbname) + overview)
             logger.info("{}: {}".format(dbname, DBDIR))
         else:
-            with io.open(u"{}/overview.txt".format(args.build), "a", encoding="utf-8") as fstream:
+            with io.open(u"{}/overview.txt".format(argv["build"]), "a", encoding="utf-8") as fstream:
                 fstream.write(u"{}: Queries not exists\n".format(dbname))
 
             logger.info("{}: Queries not exists".format(dbname))
