@@ -3,10 +3,10 @@ import os
 import io
 import json
 import logging
+import subprocess
 import collections
 
 import yaml
-from pake.shell import mkdir
 from table import Table
 from errors import PgupException
 from counter import Counter
@@ -67,7 +67,7 @@ def build_init(argv, structures, pgup_config):
         if dbdata["queries"]:
             DBDIR = u"{}/{}".format(argv["build"], dbname)
             DBFILES = u"{}/sql".format(DBDIR)
-            mkdir("-p {}".format(DBFILES))
+            subprocess.check_call("mkdir -p {}".format(DBFILES), shell=True)
             files = []
             counter = Counter()
             # save prepared sql

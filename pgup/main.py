@@ -1,18 +1,19 @@
 import os
 import logging
-from pake.shell import rm, mkdir
+import subprocess
 from pgup import Config as PgupConfig
-from pgup import build_init
-from pgup import build_diff
+from build_init import build_init
+from build_diff import build_diff
 
 logger = logging.getLogger('pgup.main')
 
 
-def pgup(config="/etc/pgup.yaml", **argv):
+def pgup(**argv):
     argv["build"] = ("build" in argv and argv["build"]) or "build/pgup"
+    argv["config"] = ("config" in argv and argv["config"]) or "/etc/pgup.yaml"
     argv["commit"] = ("commit" in argv and argv["commit"]) or None
 
-    pgup_config = PgupConfig(config)
+    pgup_config = PgupConfig(argv["config"])
 
     structures = []
     ANY_STRUCTURE_EXISTS = False
@@ -27,9 +28,9 @@ def pgup(config="/etc/pgup.yaml", **argv):
     # Remove build directory
     if os.path.exists(argv["build"]):
         logging.debug("rm -rf {}".format(argv["build"]))
-        rm(u"-rf {}".format(argv["build"]))
+        subprocess.check_call(u"rm -rf {}".format(argv["build"]), shell=True)
 
-    mkdir(u"-p {}".format(argv["build"]))
+    subprocess.check_call(u"mkdir -p {}".format(argv["build"]), shell=True)
 
     if argv["commit"]:
         build_diff(argv, structures, pgup_config)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import io
 import logging
-from pake.shell import mkdir
+import subprocess
 from diff_maker import DiffMaker
 from counter import Counter
 
@@ -19,7 +19,7 @@ def build_diff(argv, structures, pgup_config):
             dbnames = names[dbname]
             DBDIR = u"{}/{}".format(argv["build"], dbname)
             DBFILES = u"{}/sql".format(DBDIR)
-            mkdir("-p {}".format(DBFILES))
+            subprocess.check_call("mkdir -p {}".format(DBFILES), shell=True)
             files = []
             counter = Counter()
             for qry, name in zip(dbqueries, dbnames):

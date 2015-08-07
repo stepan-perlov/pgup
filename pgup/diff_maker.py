@@ -1,6 +1,6 @@
 import os
 import logging
-from pake.shell import git, find
+import subprocess
 from table import Table, Column
 from procedure import SqlFile, Procedure
 from build_init import load_structure, parse_structure
@@ -58,7 +58,7 @@ class DbChanges(object):
         """
             saved symlinks like ../<dbname>/<schema>
         """
-        for symlink in find("{} -maxdepth 1 -type l".format(self._db)).split():
+        for symlink in subprocess.check_output("find {} -maxdepth 1 -type l".format(self._db), shell=True).split():
             linkPath = os.readlink(symlink)
             split = linkPath.split("/")
             if len(split) == 3:
@@ -69,7 +69,7 @@ class DbChanges(object):
                     self._symlinks[dbname] = dict([(schema, "NEW")])
 
     def find_symlink_diff(self):
-        for symlink in find("{} -maxdepth 1 -type l".format(self._db)).split():
+        for symlink in subprocess.check_output("find {} -maxdepth 1 -type l".format(self._db), shell=True).split():
             linkPath = os.readlink(symlink)
             split = linkPath.split("/")
             if len(split) == 3:
@@ -85,14 +85,14 @@ class DbChanges(object):
     def _load_tables(self, schema):
         for table_path in ["{}/{}/{}".format(self._db, schema, path) for path in self._config.tables]:
             if os.path.exists(table_path):
-                for fpath in find("{} -name *.yaml".format(table_path)).split():
+                for fpath in subprocess.check_output("find {} -name *.yaml".format(table_path), shell=True).split():
                     table = Table(fpath)
                     self._current_tables[str(table)] = table
 
     def _load_procedures(self, schema):
         for procedure_path in ["{}/{}/{}".format(self._db, schema, path) for path in self._config.procedures]:
             if os.path.exists(procedure_path):
-                for fpath in find("{} -name *.sql".format(procedure_path)).split():
+                for fpath in subprocess.check_output("find {} -name *.sql".format(procedure_path), shell=True).split():
                     sql_file = SqlFile(fpath)
                     for header in sql_file.find_procedures_headers():
                         procedure = Procedure(sql_file, header)
@@ -174,8 +174,17 @@ class DiffMaker(object):
             which started with config.databases names
         """
         regexp = "\\\\|".join(["^[ADMR]\\\\s\\\\+{}".format(db) for db in config.databases])
-        pipe = git("diff --name-status {} HEAD".format(self._argv["commit"]), pipe=True)
-        res = pipe.grep(regexp).strip()
+        cmd = "git diff --name-status {} HEAD".format(self._argv["commit"])
+        cmd2 = "grep {}".format(regexp)
+        p = Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p2 = Popen(cmd2, stdin=p.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p.stdout.close()
+        out, err = p2.communicate()
+        if err.strip():
+            raise Exception(err)
+        print("$ {} | {}".format(cmd, cmd2))
+        print(out)
+        res = out.strip()
         if res:
             diff = res.split("\n")
         else:

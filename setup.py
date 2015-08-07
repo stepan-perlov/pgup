@@ -11,10 +11,9 @@ setup(
     license='MIT',
     author="Stepan Perlov",
     author_email="stepanperlov@gmail.com",
-    install_requires=["PyYAML", "jinja2", "pyparsing", "python-make"],
+    install_requires=["PyYAML", "jinja2", "pyparsing"],
     packages=["pgup"],
     package_data={'pgup': ['templates/*.j2']},
-    scripts=["bin/pgup"],
     data_files=[('/etc', ['etc/pgup.yaml'])],
     platforms=["linux"]
 )
