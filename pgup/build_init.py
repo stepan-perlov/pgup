@@ -58,7 +58,7 @@ def build_init(argv, structures, pgup_config):
     logger = logging.getLogger("pgup.build_init")
     data = []
     for dbname, param in structures:
-        if argv[param]:
+        if param in argv:
             structure_string = argv[param]
             structure = load_structure(structure_string)
             data.append((dbname, parse_structure(structure)))

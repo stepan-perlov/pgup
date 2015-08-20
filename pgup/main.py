@@ -20,7 +20,7 @@ def pgup(**argv):
     for dbname in pgup_config.databases:
         param = "{}_structure".format(dbname)
         structures.append((dbname, param))
-        if argv[param]:
+        if param in argv:
             ANY_STRUCTURE_EXISTS = True
         else:
             logger.info("{} not exists".format(param))
