@@ -112,7 +112,7 @@ class Table(object):
         HAVE_COLUMNS = "columns" in table
         HAVE_INHERITS = "inherits" in table
 
-        if not HAVE_COLUMNS or HAVE_INHERITS:
+        if not HAVE_COLUMNS or not HAVE_INHERITS:
             raise TableException("columns or inherits must specified".format(self._fpath))
 
         if HAVE_COLUMNS:
