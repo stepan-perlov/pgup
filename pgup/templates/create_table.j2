@@ -9,11 +9,12 @@ CREATE TABLE IF NOT EXISTS {{name}} (
 {% endfor %}
 )
 {% if inherits %}
-INHERITS
+INHERITS (
 {% for table in inherits %}
     {{table}}{% if not loop.last %},{% endif %}
 
 {% endfor %}
+)
 {% endif %};
 
 {% if comment %}
