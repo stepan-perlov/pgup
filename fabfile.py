@@ -1,4 +1,4 @@
-from fabric.api import task, local, execute
+from fabric.api import task, local, execute, lcd
 
 @task
 def up():
@@ -25,7 +25,11 @@ def syncMezzo():
     """
         Copy current module version to mezzo project
     """
-    local("rm -rf /opt/mezzo/pgup")
-    local("mkdir /opt/mezzo/pgup")
-    local("cp -R etc pgup /opt/mezzo/pgup")
-    local("cp LICENSE MANIFEST.in README.md setup.py /opt/mezzo/pgup")
+    local("rm -f /opt/mezzo/dependencies/pgup.tar.gz")
+    local("rm -rf /opt/mezzo/dependencies/pgup")
+    local("mkdir /opt/mezzo/dependencies/pgup")
+    local("cp -R etc pgup /opt/mezzo/dependencies/pgup")
+    local("cp LICENSE MANIFEST.in README.md setup.py /opt/mezzo/dependencies/pgup")
+    with lcd("/opt/mezzo/dependencies"):
+        local("tar cfvz pgup.tar.gz pgup")
+        local("rm -rf pgup")
